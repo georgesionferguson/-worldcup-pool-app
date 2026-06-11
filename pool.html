@@ -626,6 +626,7 @@ function hasLiveGames(){
   });
 }
 let syncTimer=null;
+let tradePollTimer=null;
 function scheduleSync(){
   if(syncTimer) clearTimeout(syncTimer);
   const interval=hasLiveGames()?30*1000:3*60*1000;
@@ -687,6 +688,11 @@ function go(id){
   if(id==='fixtures') renderFixtures();
   if(id==='standings') renderStandings();
   if(id==='trades') renderTrades();
+
+  if(tradePollTimer) clearInterval(tradePollTimer);
+  if(id==='trades'){
+    tradePollTimer=setInterval(syncPoolData, 8*1000);
+  }
 }
 
 // ── Squads ────────────────────────────────────────────────
@@ -770,6 +776,17 @@ async function loadGames(){
   return gamesCache;
 }
 
+async function syncPoolData(){
+  const {data,error}=await supabase.from('pools_public').select('*').eq('id',poolId).single();
+  if(error||!data) return;
+  const tradeModeChanged=data.trade_mode!==pool.trade_mode;
+  pool=data;
+  if(tradeModeChanged) buildNav();
+  renderSquads(); renderBoard();
+  if(document.getElementById('fixtures').classList.contains('on')) renderFixtures();
+  if(document.getElementById('trades').classList.contains('on')) renderTrades();
+}
+
 async function syncNow(){
   if(syncing) return;
   syncing=true;
@@ -781,6 +798,7 @@ async function syncNow(){
     gamesCache=[];
     const games=await loadGames();
     applyGames(games);
+    await syncPoolData();
     lastSync=new Date();
     if(dot) dot.className='sync-dot live';
     if(lbl) lbl.textContent=tt('live_updated')+lastSync.toLocaleTimeString();

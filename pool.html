@@ -926,9 +926,20 @@ async function renderFixtures(){
     }
     let rivalry='';
     if(homeOwner&&awayOwner){
-      rivalry=homeOwner!==awayOwner
-        ? `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`
-        : `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">— plays themselves!</span></div>`;
+      if(homeOwner===awayOwner){
+        rivalry=`<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">— plays themselves!</span></div>`;
+      }else if(score==='final'){
+        const hs=parseInt(g.home_score)||0, as=parseInt(g.away_score)||0;
+        if(hs===as){
+          rivalry=`<div class="fx-rivalry"><span style="color:var(--gray-400);font-weight:400">Draw — </span><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">&</span> <span style="color:${awayColor}">${awayOwner}</span></div>`;
+        }else{
+          const winner=hs>as?homeOwner:awayOwner;
+          const winnerColor=hs>as?homeColor:awayColor;
+          rivalry=`<div class="fx-rivalry"><span style="color:${winnerColor}">${winner}</span> <span style="color:var(--gray-400);font-weight:400">won</span></div>`;
+        }
+      }else{
+        rivalry=`<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`;
+      }
     }
     return `<div class="fx-row" style="${style}">
       ${leftCol}

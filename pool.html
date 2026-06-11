@@ -771,7 +771,7 @@ function renderBoard(){
 // ── Sync ──────────────────────────────────────────────────
 async function loadGames(){
   if(gamesCache.length) return gamesCache;
-  const res=await fetch(API);
+  const res=await fetch(API,{cache:'no-store'});
   if(!res.ok) throw new Error(`API ${res.status}`);
   const data=await res.json();
   gamesCache=Array.isArray(data)?data:(data.data||data.matches||data.games||[]);

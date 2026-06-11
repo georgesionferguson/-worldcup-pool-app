@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { id, admin_token, players, runAssigner, name, language } = req.body || {};
+  const { id, admin_token, players, runAssigner, name, language, trade_mode } = req.body || {};
 
   if (!id || !admin_token) {
     res.status(400).json({ error: 'id and admin_token are required' });
@@ -40,6 +40,9 @@ export default async function handler(req, res) {
   }
   if (Object.prototype.hasOwnProperty.call(LANGUAGES, language)) {
     update.language = language;
+  }
+  if (typeof trade_mode === 'boolean') {
+    update.trade_mode = trade_mode;
   }
 
   let nextPlayers = pool.players;
@@ -81,7 +84,7 @@ export default async function handler(req, res) {
     .from('pools')
     .update(update)
     .eq('id', id)
-    .select('id, name, num_players, players, assigned, language, created_at')
+    .select('id, name, num_players, players, assigned, language, trade_mode, trades, created_at')
     .single();
 
   if (updateError) {

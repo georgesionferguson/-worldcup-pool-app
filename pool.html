@@ -189,6 +189,20 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .link-row{display:flex;gap:8px;}
 .link-row input{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--gray-200);border-radius:8px;font-size:12px;font-family:monospace;background:var(--gray-100);color:var(--gray-900);}
 
+/* ── Trades ── */
+.trade-field{margin-bottom:1rem;}
+.trade-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-400);margin-bottom:6px;}
+.trade-field select{width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;background:var(--white);color:var(--gray-900);}
+.trade-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100);flex-wrap:wrap;}
+.trade-row:last-child{border-bottom:none;}
+.trade-desc{font-size:13px;color:var(--gray-900);flex:1;min-width:200px;}
+.trade-status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 10px;border-radius:6px;}
+.trade-status-accepted{background:var(--pitch-light);color:var(--pitch);}
+.trade-status-rejected,.trade-status-cancelled{background:#fdf2f3;color:#c0392b;}
+.empty-sm{font-size:13px;color:var(--gray-400);padding:8px 0;}
+.trade-error{font-size:13px;color:#c0392b;margin-top:8px;}
+.trade-warn{font-size:13px;color:#b45309;background:#fff8e1;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;}
+
 /* ── Buttons ── */
 .btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:opacity .15s,background .15s;}
 .btn-gold{background:var(--gold);color:var(--navy);}
@@ -396,6 +410,18 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
   <div id="standings-list"></div>
 </div>
 
+<!-- ══ TRADES ══════════════════════════════════════════════ -->
+<div id="trades" class="page">
+  <div class="setup-bar">
+    <h2 data-t="nav_trades"></h2>
+  </div>
+  <div class="trade-field">
+    <label data-t="trades_who_are_you"></label>
+    <select id="trade-whoami-select"></select>
+  </div>
+  <div id="trades-content"></div>
+</div>
+
 <!-- ══ ADMIN ══════════════════════════════════════════════ -->
 <div id="admin" class="page">
   <div class="admin-panel">
@@ -420,6 +446,12 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
     <div class="link-label" data-t="admin_language"></div>
     <select id="admin-language-select"></select>
 
+    <div class="link-label" data-t="admin_trade_mode"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-600);cursor:pointer;">
+      <input type="checkbox" id="admin-trade-toggle"/>
+      <span data-t="admin_trade_mode_desc"></span>
+    </label>
+
     <div class="btn-row" style="margin-top:1.5rem;">
       <button class="btn btn-danger" id="admin-assign-btn"></button>
     </div>
@@ -431,7 +463,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 
 <footer class="app-footer">
   <div class="app-footer-links">
-    <a class="footer-btn" href="https://buymeacoffee.com/sixnationsallstars" target="_blank" rel="noopener">🍺 Buy me a Guinness</a>
+    <a class="footer-btn" href="https://buymeacoffee.com/worldcupdraw" target="_blank" rel="noopener">🍺 Buy me a Guinness</a>
   </div>
   <div class="app-footer-disclaimer">
     World Cup Pool 2026 is an independent, fan-made game. It is not affiliated with, endorsed by, sponsored by, or otherwise associated with FIFA, the FIFA World Cup, any national football association, or any official competition. Team names and tournament data are used for informational, descriptive and editorial purposes only. No official logos, crests, or branding are used. All trademarks and trade names remain the property of their respective owners.
@@ -612,6 +644,7 @@ function buildNav(){
     ['fixtures','nav_fixtures'],
     ['standings','nav_standings'],
   ];
+  if(pool.trade_mode) items.push(['trades','nav_trades']);
   if(isAdmin) items.push(['admin','admin_panel']);
   navInner.innerHTML=items.map(([id,key])=>`<button class="nav-btn" data-nav="${id}">${tt(key)}</button>`).join('');
   navInner.querySelectorAll('[data-nav]').forEach(b=>{
@@ -653,6 +686,7 @@ function go(id){
   if(id==='teams') renderSquads();
   if(id==='fixtures') renderFixtures();
   if(id==='standings') renderStandings();
+  if(id==='trades') renderTrades();
 }
 
 // ── Squads ────────────────────────────────────────────────
@@ -1008,6 +1042,13 @@ function setupAdmin(){
     if(document.getElementById('fixtures').classList.contains('on')) renderFixtures();
     if(document.getElementById('standings').classList.contains('on')) renderStandings();
   });
+
+  const tradeToggle=document.getElementById('admin-trade-toggle');
+  tradeToggle.checked=!!pool.trade_mode;
+  tradeToggle.addEventListener('change',async()=>{
+    await callPoolUpdate({trade_mode:tradeToggle.checked}, tt('admin_saved'));
+    buildNav();
+  });
 }
 
 function renderAdminPlayers(){
@@ -1095,6 +1136,196 @@ async function callPoolUpdate(body,successMsg,reveal){
     showAdminMsg(tt('admin_save_failed')+e.message,false);
   }finally{
     btn1.disabled=false; btn2.disabled=false; if(btn3) btn3.disabled=false;
+  }
+}
+
+// ── Trades ────────────────────────────────────────────────
+const MAX_PENDING_TRADES=3;
+let tradeForm={fromCountry:'',toPlayer:'',toCountry:''};
+
+function renderTrades(){
+  const players=pool.players||[];
+  const sel=document.getElementById('trade-whoami-select');
+  if(!sel.dataset.built){
+    sel.innerHTML=`<option value="">${tt('trades_select_player')}</option>`+
+      players.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+    const saved=localStorage.getItem('wmpool_whoami_'+poolId);
+    if(saved!==null && players[Number(saved)]) sel.value=saved;
+    sel.addEventListener('change',()=>{
+      localStorage.setItem('wmpool_whoami_'+poolId, sel.value);
+      tradeForm={fromCountry:'',toPlayer:'',toCountry:''};
+      renderTrades();
+    });
+    sel.dataset.built='1';
+  }
+
+  const wrap=document.getElementById('trades-content');
+  const meIdx=sel.value===''?null:Number(sel.value);
+  if(meIdx===null){
+    wrap.innerHTML=`<div class="empty"><div class="empty-icon">🔁</div>${tt('trades_pick_player_prompt')}</div>`;
+    return;
+  }
+
+  const me=players[meIdx];
+  const myCountries=(me.countries||[]).filter(Boolean);
+  const trades=pool.trades||[];
+  const pendingOut=trades.filter(t=>t.status==='pending'&&t.fromPlayer===meIdx);
+  const pendingIn=trades.filter(t=>t.status==='pending'&&t.toPlayer===meIdx);
+  const history=trades.filter(t=>t.status!=='pending'&&(t.fromPlayer===meIdx||t.toPlayer===meIdx)).slice(-10).reverse();
+
+  const otherPlayers=players.map((p,i)=>({p,i})).filter(o=>o.i!==meIdx);
+  let targetIdx=tradeForm.toPlayer!==''?Number(tradeForm.toPlayer):(otherPlayers[0]?.i ?? '');
+  if(!players[targetIdx]) targetIdx=otherPlayers[0]?.i ?? '';
+  const targetCountries=targetIdx!==''?(players[targetIdx].countries||[]).filter(Boolean):[];
+
+  let html='';
+
+  html+=`<div class="rules-card"><div class="rules-title">${tt('trades_propose_title')}</div>`;
+  if(!myCountries.length){
+    html+=`<div class="empty-sm">${tt('trades_no_countries')}</div>`;
+  }else if(pendingOut.length>=MAX_PENDING_TRADES){
+    html+=`<div class="trade-warn">${tt('trades_limit_reached')}</div>`;
+  }else if(!otherPlayers.length||!targetCountries.length){
+    html+=`<div class="empty-sm">${tt('trades_no_targets')}</div>`;
+  }else{
+    html+=`
+    <div class="trade-field">
+      <label>${tt('trades_your_country')}</label>
+      <select id="trade-from-country">${myCountries.map(c=>`<option value="${c}"${c===tradeForm.fromCountry?' selected':''}>${flagFor(c)} ${c}</option>`).join('')}</select>
+    </div>
+    <div class="trade-field">
+      <label>${tt('trades_their_player')}</label>
+      <select id="trade-to-player">${otherPlayers.map(({p,i})=>`<option value="${i}"${i===targetIdx?' selected':''}>${p.name}</option>`).join('')}</select>
+    </div>
+    <div class="trade-field">
+      <label>${tt('trades_their_country')}</label>
+      <select id="trade-to-country">${targetCountries.map(c=>`<option value="${c}"${c===tradeForm.toCountry?' selected':''}>${flagFor(c)} ${c}</option>`).join('')}</select>
+    </div>
+    <button class="btn btn-gold" id="trade-propose-btn">${tt('trades_propose_btn')}</button>
+    <div class="trade-error" id="trade-propose-error" style="display:none"></div>
+    `;
+  }
+  html+=`</div>`;
+
+  html+=`<div class="rules-card"><div class="rules-title">${tt('trades_incoming_title')}</div>`;
+  if(!pendingIn.length){
+    html+=`<div class="empty-sm">${tt('trades_no_incoming')}</div>`;
+  }else{
+    html+=pendingIn.map(t=>{
+      const fromP=players[t.fromPlayer];
+      return `<div class="trade-row">
+        <div class="trade-desc">${fromP.name} ${tt('trades_offers')} ${flagFor(t.fromCountry)} ${t.fromCountry} ${tt('trades_for')} ${tt('trades_your')} ${flagFor(t.toCountry)} ${t.toCountry}</div>
+        <div class="btn-row">
+          <button class="btn btn-gold btn-sm" data-accept="${t.id}">${tt('trades_accept')}</button>
+          <button class="btn btn-ghost btn-sm" data-reject="${t.id}">${tt('trades_reject')}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  html+=`</div>`;
+
+  html+=`<div class="rules-card"><div class="rules-title">${tt('trades_outgoing_title')}</div>`;
+  if(!pendingOut.length){
+    html+=`<div class="empty-sm">${tt('trades_no_outgoing')}</div>`;
+  }else{
+    html+=pendingOut.map(t=>{
+      const toP=players[t.toPlayer];
+      return `<div class="trade-row">
+        <div class="trade-desc">${tt('trades_you_offered')} ${flagFor(t.fromCountry)} ${t.fromCountry} ${tt('trades_for')} ${toP.name}'s ${flagFor(t.toCountry)} ${t.toCountry}</div>
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-sm" data-cancel="${t.id}">${tt('trades_cancel')}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  html+=`</div>`;
+
+  if(history.length){
+    html+=`<div class="rules-card"><div class="rules-title">${tt('trades_history_title')}</div>`;
+    html+=history.map(t=>{
+      const fromP=players[t.fromPlayer], toP=players[t.toPlayer];
+      if(!fromP||!toP) return '';
+      return `<div class="trade-row">
+        <div class="trade-desc">${fromP.name} ${flagFor(t.fromCountry)} ${t.fromCountry} ↔ ${toP.name} ${flagFor(t.toCountry)} ${t.toCountry}</div>
+        <div class="trade-status trade-status-${t.status}">${tt('trades_status_'+t.status)}</div>
+      </div>`;
+    }).join('');
+    html+=`</div>`;
+  }
+
+  wrap.innerHTML=html;
+
+  document.getElementById('trade-to-player')?.addEventListener('change',e=>{
+    tradeForm.toPlayer=e.target.value;
+    tradeForm.toCountry='';
+    renderTrades();
+  });
+  document.getElementById('trade-from-country')?.addEventListener('change',e=>{ tradeForm.fromCountry=e.target.value; });
+  document.getElementById('trade-to-country')?.addEventListener('change',e=>{ tradeForm.toCountry=e.target.value; });
+  document.getElementById('trade-propose-btn')?.addEventListener('click',()=>proposeTrade(meIdx));
+  wrap.querySelectorAll('[data-accept]').forEach(b=>b.addEventListener('click',()=>respondTrade(b.dataset.accept,true)));
+  wrap.querySelectorAll('[data-reject]').forEach(b=>b.addEventListener('click',()=>respondTrade(b.dataset.reject,false)));
+  wrap.querySelectorAll('[data-cancel]').forEach(b=>b.addEventListener('click',()=>cancelTrade(b.dataset.cancel)));
+}
+
+async function proposeTrade(meIdx){
+  const fromCountry=document.getElementById('trade-from-country').value;
+  const toPlayer=Number(document.getElementById('trade-to-player').value);
+  const toCountry=document.getElementById('trade-to-country').value;
+  const errEl=document.getElementById('trade-propose-error');
+  const btn=document.getElementById('trade-propose-btn');
+  btn.disabled=true;
+  try{
+    const res=await fetch('/api/pool-trade',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:poolId, action:'propose', fromPlayer:meIdx, fromCountry, toPlayer, toCountry}),
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||`Request failed (${res.status})`);
+    pool={...pool, trades:data.trades, players:data.players||pool.players};
+    tradeForm={fromCountry:'',toPlayer:'',toCountry:''};
+    renderTrades();
+  }catch(e){
+    errEl.textContent=e.message;
+    errEl.style.display='block';
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+async function respondTrade(tradeId,accept){
+  try{
+    const res=await fetch('/api/pool-trade',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:poolId, action:'respond', tradeId, accept}),
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||`Request failed (${res.status})`);
+    pool={...pool, trades:data.trades, players:data.players||pool.players};
+    renderTrades();
+    renderSquads();
+    renderBoard();
+    if(document.getElementById('fixtures').classList.contains('on')) renderFixtures();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function cancelTrade(tradeId){
+  try{
+    const res=await fetch('/api/pool-trade',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:poolId, action:'cancel', tradeId}),
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||`Request failed (${res.status})`);
+    pool={...pool, trades:data.trades};
+    renderTrades();
+  }catch(e){
+    alert(e.message);
   }
 }
 

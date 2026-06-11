@@ -10,6 +10,8 @@ create table pools (
   players jsonb not null default '[]'::jsonb,
   assigned boolean not null default false,
   language text not null default 'en',
+  trade_mode boolean not null default false,
+  trades jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -17,7 +19,7 @@ alter table pools enable row level security;
 
 -- Public, read-only view that hides admin_token.
 create view pools_public as
-  select id, name, num_players, players, assigned, language, created_at
+  select id, name, num_players, players, assigned, language, trade_mode, trades, created_at
   from pools;
 
 -- Allow anyone (anon key) to read from the public view.

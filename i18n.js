@@ -98,6 +98,7 @@ export const STRINGS = {
     admin_setup_title: 'Set up your players',
     admin_setup_desc: 'Give each player a name before you run the random team draw. You can always rename players later from the admin panel.',
     admin_setup_save: 'Save names',
+    admin_color_taken: 'Two players can\'t have the same color.',
   },
 
   de: {
@@ -189,6 +190,7 @@ export const STRINGS = {
     admin_setup_title: 'Spieler einrichten',
     admin_setup_desc: 'Gib jedem Spieler einen Namen, bevor du die zufällige Team-Auslosung startest. Du kannst die Namen später jederzeit im Admin-Bereich ändern.',
     admin_setup_save: 'Namen speichern',
+    admin_color_taken: 'Zwei Spieler können nicht dieselbe Farbe haben.',
   },
 
   es: {
@@ -280,6 +282,7 @@ export const STRINGS = {
     admin_setup_title: 'Configura a tus jugadores',
     admin_setup_desc: 'Dale un nombre a cada jugador antes de hacer el sorteo aleatorio de equipos. Siempre puedes cambiar los nombres más tarde desde el panel de administración.',
     admin_setup_save: 'Guardar nombres',
+    admin_color_taken: 'Dos jugadores no pueden tener el mismo color.',
   },
 
   fr: {
@@ -371,6 +374,7 @@ export const STRINGS = {
     admin_setup_title: 'Configure tes joueurs',
     admin_setup_desc: "Donne un nom à chaque joueur avant de lancer le tirage au sort des équipes. Tu pourras toujours renommer les joueurs plus tard depuis le panneau d'administration.",
     admin_setup_save: 'Enregistrer les noms',
+    admin_color_taken: 'Deux joueurs ne peuvent pas avoir la même couleur.',
   },
 
   it: {
@@ -462,6 +466,7 @@ export const STRINGS = {
     admin_setup_title: 'Configura i giocatori',
     admin_setup_desc: 'Assegna un nome a ciascun giocatore prima di eseguire il sorteggio casuale delle squadre. Potrai sempre rinominare i giocatori in seguito dal pannello admin.',
     admin_setup_save: 'Salva nomi',
+    admin_color_taken: 'Due giocatori non possono avere lo stesso colore.',
   },
 
   pt: {
@@ -553,6 +558,7 @@ export const STRINGS = {
     admin_setup_title: 'Configure os jogadores',
     admin_setup_desc: 'Dê um nome a cada jogador antes de fazer o sorteio aleatório das seleções. Você sempre pode renomear os jogadores depois no painel admin.',
     admin_setup_save: 'Salvar nomes',
+    admin_color_taken: 'Dois jogadores não podem ter a mesma cor.',
   },
 
   nl: {
@@ -644,6 +650,7 @@ export const STRINGS = {
     admin_setup_title: 'Spelers instellen',
     admin_setup_desc: 'Geef elke speler een naam voordat je de willekeurige teamloting uitvoert. Je kunt de namen later altijd nog aanpassen in het beheerpaneel.',
     admin_setup_save: 'Namen opslaan',
+    admin_color_taken: 'Twee spelers kunnen niet dezelfde kleur hebben.',
   },
 };
 

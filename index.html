@@ -78,7 +78,6 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .admin-player-row input[type=text]{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:16px;font-family:'Inter',sans-serif;outline:none;}
 .admin-player-row input[type=text]:focus{border-color:var(--pitch);}
 .admin-player-row input[type=color]{width:44px;height:44px;border:1px solid var(--gray-200);border-radius:8px;padding:2px;cursor:pointer;background:var(--white);flex-shrink:0;}
-.skip-link{display:block;text-align:center;font-size:13px;color:var(--gray-600);margin-top:1rem;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;width:100%;}
 </style>
 </head>
 <body>
@@ -136,8 +135,8 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
     <div class="card-title">Set up your players</div>
     <div style="font-size:14px;color:var(--gray-600);line-height:1.6;margin-bottom:1rem">Give each player a name and pick their color — this is what highlights their teams in the fixtures list. You can always change these later from the admin panel.</div>
     <div id="setup-players"></div>
+    <div class="error-msg" id="setup-error"></div>
     <button class="btn btn-gold btn-block" id="setup-continue-btn" style="margin-top:1rem">Continue →</button>
-    <button type="button" class="skip-link" id="setup-skip-btn">Skip for now</button>
   </div>
 
   <div id="result-screen" class="card hidden">
@@ -220,6 +219,23 @@ function renderSetupPlayers(numPlayers) {
       <input type="text" maxlength="40" data-idx="${i}" data-field="name" placeholder="Player ${i + 1}"/>
     </div>
   `).join('');
+
+  const errorEl = document.getElementById('setup-error');
+  const inputs = wrap.querySelectorAll('input[type=color]');
+  inputs.forEach(inp => {
+    inp.dataset.prev = inp.value;
+    inp.onchange = () => {
+      const dup = Array.from(inputs).some(o => o !== inp && o.value.toLowerCase() === inp.value.toLowerCase());
+      if (dup) {
+        inp.value = inp.dataset.prev;
+        errorEl.textContent = "Two players can't have the same color.";
+        errorEl.classList.add('show');
+      } else {
+        errorEl.classList.remove('show');
+        inp.dataset.prev = inp.value;
+      }
+    };
+  });
 }
 
 function showResultScreen() {
@@ -260,8 +276,6 @@ document.getElementById('setup-continue-btn').addEventListener('click', async ()
   setupBtn.textContent = 'Continue →';
   showResultScreen();
 });
-
-document.getElementById('setup-skip-btn').addEventListener('click', showResultScreen);
 
 document.querySelectorAll('[data-copy]').forEach(b => {
   b.addEventListener('click', () => {

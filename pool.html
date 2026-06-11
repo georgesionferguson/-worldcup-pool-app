@@ -1000,6 +1000,23 @@ function renderAdminPlayers(){
       <input type="text" value="${p.name}" maxlength="40" data-idx="${i}" data-field="name" placeholder="${tt('admin_player_name')}"/>
     </div>
   `).join('');
+  preventDuplicateColors('admin-players');
+}
+
+function preventDuplicateColors(containerId){
+  const inputs=document.querySelectorAll(`#${containerId} input[type=color]`);
+  inputs.forEach(inp=>{
+    inp.dataset.prev=inp.value;
+    inp.onchange=()=>{
+      const dup=Array.from(inputs).some(o=>o!==inp&&o.value.toLowerCase()===inp.value.toLowerCase());
+      if(dup){
+        inp.value=inp.dataset.prev;
+        showAdminMsg(tt('admin_color_taken'),false);
+      }else{
+        inp.dataset.prev=inp.value;
+      }
+    };
+  });
 }
 
 function showAdminMsg(msg,ok){
@@ -1051,6 +1068,7 @@ function renderSetupCard(){
       <input type="text" value="${isDefaultName(p,i)?'':p.name}" maxlength="40" data-idx="${i}" data-field="name" placeholder="${tt('admin_player_name')} ${i+1}"/>
     </div>
   `).join('');
+  preventDuplicateColors('rules-setup-players');
 }
 
 async function saveSetupNames(){

@@ -764,8 +764,8 @@ async function syncNow(){
 function applyGames(games){
   const goalMap={}, stageMap={};
   games.forEach(g=>{
-    const h=g.home_team_en||g.home_team_name||g.home_team||null;
-    const a=g.away_team_en||g.away_team_name||g.away_team||null;
+    const h=g.home_team_name_en||g.home_team_en||g.home_team_name||g.home_team||null;
+    const a=g.away_team_name_en||g.away_team_en||g.away_team_name||g.away_team||null;
     if(h) goalMap[h]=(goalMap[h]||0)+(parseInt(g.home_score)||0);
     if(a) goalMap[a]=(goalMap[a]||0)+(parseInt(g.away_score)||0);
     const st=inferStage(g.type||g.stage||'');

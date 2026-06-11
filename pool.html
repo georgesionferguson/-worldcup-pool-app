@@ -145,13 +145,14 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .fx-day{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-400);margin:1.25rem 0 .5rem;}
 .fx-day:first-child{margin-top:0;}
 .fx-table{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
-.fx-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--gray-100);border-left:4px solid transparent;}
+.fx-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--gray-100);border-left:4px solid transparent;border-right:4px solid transparent;}
 .fx-row:last-child{border-bottom:none;}
 .fx-time{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.03em;color:var(--navy);width:64px;flex-shrink:0;line-height:1.1;}
 .fx-time small{display:block;font-family:'Inter',sans-serif;font-size:10px;color:var(--gray-400);font-weight:600;letter-spacing:.04em;}
 .fx-score{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;color:var(--navy);width:64px;flex-shrink:0;line-height:1.1;}
 .fx-teams{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--gray-900);}
 .fx-stage{font-size:11px;color:var(--gray-400);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+.fx-rivalry{font-size:12px;font-weight:700;margin-top:3px;}
 .fx-live{display:inline-flex;align-items:center;gap:4px;color:#16a34a;font-weight:700;margin-right:6px;}
 .fx-live .live-dot{width:6px;height:6px;border-radius:50%;background:#16a34a;animation:blink 1s infinite;}
 .fx-ft{color:var(--gray-400);font-weight:700;margin-right:6px;}
@@ -746,11 +747,11 @@ function applyGames(games){
 
 // ── Fixtures ──────────────────────────────────────────────
 function highlightMap(){
-  const m={};
+  const colors={}, owners={};
   (pool.players||[]).forEach(p=>{
-    (p.countries||[]).forEach(c=>{ m[c]=p.color; });
+    (p.countries||[]).forEach(c=>{ colors[c]=p.color; owners[c]=p.name; });
   });
-  return m;
+  return {colors, owners};
 }
 
 async function renderFixtures(){
@@ -804,12 +805,25 @@ async function renderFixtures(){
       const time=g.kickoff.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
       leftCol=`<div class="fx-time">${time}</div>`;
     }
-    const color=hl[home]||hl[away]||fuzzy(hl,home)||fuzzy(hl,away);
-    const style=color?`border-left-color:${color};background:color-mix(in srgb, ${color} 10%, white);`:'';
+    const homeColor=hl.colors[home]||fuzzy(hl.colors,home);
+    const awayColor=hl.colors[away]||fuzzy(hl.colors,away);
+    const homeOwner=hl.owners[home]||fuzzy(hl.owners,home);
+    const awayOwner=hl.owners[away]||fuzzy(hl.owners,away);
+    let style='';
+    if(homeColor&&awayColor&&homeColor!==awayColor){
+      style=`background:linear-gradient(to right, color-mix(in srgb, ${homeColor} 12%, white) 50%, color-mix(in srgb, ${awayColor} 12%, white) 50%);border-left-color:${homeColor};border-right:4px solid ${awayColor};`;
+    }else{
+      const color=homeColor||awayColor;
+      style=color?`border-left-color:${color};background:color-mix(in srgb, ${color} 10%, white);`:'';
+    }
+    const rivalry=(homeOwner&&awayOwner&&homeOwner!==awayOwner)
+      ? `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`
+      : '';
     return `<div class="fx-row" style="${style}">
       ${leftCol}
       <div class="fx-teams">
         ${flagFor(home)} ${home} <span style="color:var(--gray-400);font-weight:400">vs</span> ${away} ${flagFor(away)}
+        ${rivalry}
         <div class="fx-stage">${badge}${stage}${g.group?' · Group '+g.group:''}${venue?' · '+venue:''}</div>
       </div>
     </div>`;

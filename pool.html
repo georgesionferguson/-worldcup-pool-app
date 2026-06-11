@@ -174,6 +174,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .admin-banner{background:var(--gold);color:var(--navy);font-size:12px;font-weight:700;text-align:center;padding:6px;letter-spacing:.04em;text-transform:uppercase;}
 .recover-banner{background:var(--pitch);color:var(--white);font-size:13px;font-weight:600;text-align:center;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
 .recover-banner a{color:var(--white);text-decoration:underline;font-weight:700;}
+.fx-notice{background:#fff8e1;color:#92400e;border:1px solid #fde68a;border-radius:var(--r);padding:12px 16px;margin-bottom:1.25rem;font-size:14px;line-height:1.5;}
 .admin-panel{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow);}
 .admin-player-row{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);}
 .admin-player-row:last-child{border-bottom:none;}
@@ -388,6 +389,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
     </div>
     <span style="font-size:11px;color:rgba(255,255,255,.4)" id="fx-tz-label"></span>
   </div>
+  <div class="fx-notice" id="fx-not-assigned" style="display:none" data-t="fixtures_not_assigned"></div>
   <div id="fixtures-list"></div>
 </div>
 
@@ -791,6 +793,9 @@ async function renderFixtures(){
   const tzLbl=document.getElementById('fx-tz-label');
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   if(tzLbl) tzLbl.textContent=tt('times_shown_in')+tz.replace(/_/g,' ');
+
+  const notice=document.getElementById('fx-not-assigned');
+  if(notice) notice.style.display=pool.assigned?'none':'block';
 
   if(lbl) lbl.textContent=tt('loading_fixtures');
   try{

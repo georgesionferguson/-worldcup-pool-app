@@ -193,6 +193,8 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .btn-danger{background:#fdf2f3;color:#c0392b;border:1px solid #fbd5d8;}
 .btn-danger:hover{background:#fbe2e4;}
 .btn-sm{padding:6px 12px;font-size:12px;}
+.btn-lg{padding:16px 24px;font-size:16px;font-weight:700;}
+.btn-block{width:100%;justify-content:center;}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
 .btn:disabled{opacity:.5;cursor:default;}
 
@@ -311,6 +313,13 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
     <div style="font-size:14px;color:var(--gray-600);line-height:1.6" data-t="teams_explainer"></div>
   </div>
 
+  <div class="rules-card" id="rules-admin-assign" style="display:none;">
+    <div class="rules-title" data-t="admin_panel"></div>
+    <div style="font-size:14px;color:var(--gray-600);line-height:1.6;margin-bottom:1rem" data-t="admin_run_assigner_rules_desc"></div>
+    <button class="btn btn-gold btn-block btn-lg" id="rules-assign-btn"></button>
+    <div style="font-size:12px;color:#b45309;margin-top:10px;text-align:center" data-t="admin_run_assigner_warning"></div>
+  </div>
+
   <div style="text-align:center;margin-top:1.5rem;">
     <button class="btn btn-navy" data-go="teams" id="rules-cta"></button>
   </div>
@@ -386,8 +395,9 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
     <div id="admin-players"></div>
     <div class="btn-row" style="margin-top:1rem;">
       <button class="btn btn-gold" id="admin-save-btn" data-t="admin_save"></button>
-      <button class="btn btn-danger" id="admin-assign-btn" data-t="admin_run_assigner"></button>
+      <button class="btn btn-danger" id="admin-assign-btn"></button>
     </div>
+    <div style="font-size:12px;color:#b45309;margin-top:8px" data-t="admin_run_assigner_warning"></div>
     <div class="admin-msg" id="admin-msg"></div>
 
     <div class="link-label" data-t="admin_public_link"></div>
@@ -539,7 +549,12 @@ async function init(){
   document.getElementById('board-refresh-btn').addEventListener('click',renderBoard);
   document.getElementById('rules-cta').addEventListener('click',()=>go('teams'));
 
-  if(isAdmin) setupAdmin();
+  if(isAdmin){
+    setupAdmin();
+    document.getElementById('rules-admin-assign').style.display='block';
+    document.getElementById('rules-assign-btn').addEventListener('click',runAssigner);
+    updateAssignerButtons();
+  }
 
   go('rules');
   setTimeout(()=>syncNow(),400);
@@ -942,15 +957,26 @@ async function saveAdminNames(){
   await callPoolUpdate({players}, tt('admin_saved'));
 }
 
+function updateAssignerButtons(){
+  const label=pool.assigned?tt('admin_run_assigner_again'):tt('admin_run_assigner');
+  const rulesBtn=document.getElementById('rules-assign-btn');
+  const adminBtn=document.getElementById('admin-assign-btn');
+  if(rulesBtn) rulesBtn.textContent=label;
+  if(adminBtn) adminBtn.textContent=label;
+}
+
 async function runAssigner(){
   if(!confirm(tt('admin_run_assigner_confirm'))) return;
+  if(pool.assigned && !confirm(tt('admin_run_assigner_redo_confirm'))) return;
   await callPoolUpdate({runAssigner:true}, tt('admin_saved'), true);
+  updateAssignerButtons();
 }
 
 async function callPoolUpdate(body,successMsg,reveal){
   const btn1=document.getElementById('admin-save-btn');
   const btn2=document.getElementById('admin-assign-btn');
-  btn1.disabled=true; btn2.disabled=true;
+  const btn3=document.getElementById('rules-assign-btn');
+  btn1.disabled=true; btn2.disabled=true; if(btn3) btn3.disabled=true;
   try{
     const res=await fetch('/api/pool-update',{
       method:'POST',
@@ -968,7 +994,7 @@ async function callPoolUpdate(body,successMsg,reveal){
   }catch(e){
     showAdminMsg(tt('admin_save_failed')+e.message,false);
   }finally{
-    btn1.disabled=false; btn2.disabled=false;
+    btn1.disabled=false; btn2.disabled=false; if(btn3) btn3.disabled=false;
   }
 }
 

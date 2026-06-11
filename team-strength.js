@@ -27,23 +27,25 @@ function shuffle(arr) {
   return arr;
 }
 
-// Splits the 48 teams into `numPlayers` contiguous strength "bands"
-// (sorted strongest-first, sizes differing by at most 1), then deals
-// each band round-robin (with a random starting offset) to the players.
-// Result: every player gets a roughly even spread across the strength
-// spectrum, mirroring the original "one team per tier" fairness.
+// Splits the teams into `numPlayers` equal-sized strength "bands"
+// (sorted strongest-first), then deals each band round-robin to the
+// players, balancing running totals so everyone ends up with the same
+// number of teams. If 48 doesn't divide evenly by `numPlayers`, the
+// weakest teams are duplicated (so two players can share the same
+// lowest-tier team) to make up the difference.
 export function assignTeams(numPlayers) {
-  const teams = Object.keys(TEAM_STRENGTH).sort((a, b) => TEAM_STRENGTH[b] - TEAM_STRENGTH[a]);
-  const total = teams.length;
-  const baseSize = Math.floor(total / numPlayers);
-  const remainder = total % numPlayers;
+  const sorted = Object.keys(TEAM_STRENGTH).sort((a, b) => TEAM_STRENGTH[b] - TEAM_STRENGTH[a]);
+  const perPlayer = Math.ceil(sorted.length / numPlayers);
+  const targetTotal = perPlayer * numPlayers;
+  const teams = [...sorted];
+  for (let i = 0; teams.length < targetTotal; i++) {
+    teams.push(sorted[sorted.length - 1 - i]);
+  }
+  teams.sort((a, b) => TEAM_STRENGTH[b] - TEAM_STRENGTH[a]);
 
   const bands = [];
-  let idx = 0;
   for (let i = 0; i < numPlayers; i++) {
-    const size = i < remainder ? baseSize + 1 : baseSize;
-    bands.push(teams.slice(idx, idx + size));
-    idx += size;
+    bands.push(teams.slice(i * perPlayer, (i + 1) * perPlayer));
   }
 
   const assignments = Array.from({ length: numPlayers }, () => []);

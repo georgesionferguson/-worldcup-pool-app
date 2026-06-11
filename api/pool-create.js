@@ -1,4 +1,5 @@
 import { adminClient, DEFAULT_COLORS } from './_supabase.js';
+import { LANGUAGES } from '../i18n.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -10,7 +11,7 @@ export default async function handler(req, res) {
 
   const poolName = String(name || '').trim().slice(0, 60);
   const n = Number(numPlayers);
-  const lang = language === 'de' ? 'de' : 'en';
+  const lang = Object.prototype.hasOwnProperty.call(LANGUAGES, language) ? language : 'en';
 
   if (!poolName) {
     res.status(400).json({ error: 'Pool name is required' });

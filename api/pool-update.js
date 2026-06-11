@@ -1,5 +1,6 @@
 import { adminClient } from './_supabase.js';
 import { assignTeams } from '../team-strength.js';
+import { LANGUAGES } from '../i18n.js';
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
   if (typeof name === 'string' && name.trim()) {
     update.name = name.trim().slice(0, 60);
   }
-  if (language === 'en' || language === 'de') {
+  if (Object.prototype.hasOwnProperty.call(LANGUAGES, language)) {
     update.language = language;
   }
 

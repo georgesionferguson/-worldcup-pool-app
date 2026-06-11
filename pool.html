@@ -845,11 +845,14 @@ async function renderFixtures(){
       style=`background:linear-gradient(to right, color-mix(in srgb, ${homeColor} 12%, white) 50%, color-mix(in srgb, ${awayColor} 12%, white) 50%);border-left-color:${homeColor};border-right:4px solid ${awayColor};`;
     }else{
       const color=homeColor||awayColor;
-      style=color?`border-left-color:${color};background:color-mix(in srgb, ${color} 10%, white);`:'';
+      style=color?`border-left-color:${color};border-right:4px solid ${color};background:color-mix(in srgb, ${color} 10%, white);`:'';
     }
-    const rivalry=(homeOwner&&awayOwner&&homeOwner!==awayOwner)
-      ? `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`
-      : '';
+    let rivalry='';
+    if(homeOwner&&awayOwner){
+      rivalry=homeOwner!==awayOwner
+        ? `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`
+        : `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">— plays themselves!</span></div>`;
+    }
     return `<div class="fx-row" style="${style}">
       ${leftCol}
       <div class="fx-teams">

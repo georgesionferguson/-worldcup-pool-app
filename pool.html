@@ -166,6 +166,11 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .sync-label{font-size:13px;color:rgba(255,255,255,.7);}
 
 /* ── Admin ── */
+.app-footer{background:var(--navy);margin-top:2rem;padding:2rem 1rem;text-align:center;}
+.app-footer-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:1.25rem;}
+.footer-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:999px;border:1px solid rgba(245,197,24,.4);color:var(--gold);font-size:14px;font-weight:700;font-family:'Inter',sans-serif;text-decoration:none;transition:background .15s;}
+.footer-btn:hover{background:rgba(245,197,24,.08);}
+.app-footer-disclaimer{font-size:12px;line-height:1.7;color:rgba(255,255,255,.3);max-width:640px;margin:0 auto;}
 .admin-banner{background:var(--gold);color:var(--navy);font-size:12px;font-weight:700;text-align:center;padding:6px;letter-spacing:.04em;text-transform:uppercase;}
 .recover-banner{background:var(--pitch);color:var(--white);font-size:13px;font-weight:600;text-align:center;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
 .recover-banner a{color:var(--white);text-decoration:underline;font-weight:700;}
@@ -429,6 +434,15 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 </div>
 
 </main>
+
+<footer class="app-footer">
+  <div class="app-footer-links">
+    <a class="footer-btn" href="https://buymeacoffee.com/sixnationsallstars" target="_blank" rel="noopener">🍺 Buy me a Guinness</a>
+  </div>
+  <div class="app-footer-disclaimer">
+    World Cup Pool 2026 is an independent, fan-made game. It is not affiliated with, endorsed by, sponsored by, or otherwise associated with FIFA, the FIFA World Cup, any national football association, or any official competition. Team names and tournament data are used for informational, descriptive and editorial purposes only. No official logos, crests, or branding are used. All trademarks and trade names remain the property of their respective owners.
+  </div>
+</footer>
 </template>
 
 <script type="module">

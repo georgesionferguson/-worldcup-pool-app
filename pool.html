@@ -200,6 +200,18 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .section-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-400);margin-bottom:10px;}
 .center-msg{text-align:center;padding:4rem 1rem;color:var(--gray-600);}
 
+/* ── Draft reveal ── */
+.draft-overlay{position:fixed;inset:0;background:rgba(11,30,53,.96);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.draft-box{background:var(--white);border-radius:var(--r);padding:2rem;max-width:480px;width:100%;text-align:center;box-shadow:var(--shadow-md);}
+.draft-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--pitch);font-weight:700;margin-bottom:6px;}
+.draft-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.04em;color:var(--navy);margin-bottom:1.25rem;}
+.draft-player{display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.03em;color:var(--navy);margin-bottom:1rem;min-height:32px;}
+.draft-dot{width:16px;height:16px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.draft-teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;min-height:48px;margin-bottom:1.25rem;}
+.draft-team-slot{background:var(--gray-100);border-radius:8px;padding:10px 8px;font-size:13px;font-weight:600;color:var(--gray-600);transition:transform .15s,background .15s,color .15s;}
+.draft-team-slot.locked{background:var(--pitch-light);color:var(--pitch);transform:scale(1.06);font-weight:700;}
+.draft-progress{font-size:12px;color:var(--gray-400);margin-bottom:1rem;}
+
 /* ── Mobile ── */
 @media(max-width:600px){
   .hdr-inner{height:48px;}
@@ -396,12 +408,15 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { t } from './i18n.js';
+import { TEAM_STRENGTH } from './team-strength.js';
 
 // ── Constants ─────────────────────────────────────────────
 const GOAL_PTS=4;
 const BONUS={'Last 32':10,'Last 16':16,'Quarter-final':20,'Final':24,'Winner':26};
 const STAGE_ORDER=['Last 32','Last 16','Quarter-final','Final','Winner'];
 const API='/api/games';
+const ALL_TEAMS=Object.keys(TEAM_STRENGTH);
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 const FLAGS={'France':'🇫🇷','Spain':'🇪🇸','Argentina':'🇦🇷','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Portugal':'🇵🇹','Brazil':'🇧🇷','Netherlands':'🇳🇱','Germany':'🇩🇪','Morocco':'🇲🇦','Belgium':'🇧🇪','Colombia':'🇨🇴','Uruguay':'🇺🇾','Senegal':'🇸🇳','Japan':'🇯🇵','Norway':'🇳🇴','Mexico':'🇲🇽','USA':'🇺🇸','Canada':'🇨🇦','Korea Republic':'🇰🇷','Ecuador':'🇪🇨','Switzerland':'🇨🇭','Croatia':'🇭🇷','Türkiye':'🇹🇷','Austria':'🇦🇹','Algeria':'🇩🇿','Ivory Coast':'🇨🇮','Australia':'🇦🇺','Sweden':'🇸🇪','Egypt':'🇪🇬','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Czechia':'🇨🇿','Bosnia':'🇧🇦','Tunisia':'🇹🇳','Paraguay':'🇵🇾','Ghana':'🇬🇭','Saudi Arabia':'🇸🇦','South Africa':'🇿🇦','Iraq':'🇮🇶','Panama':'🇵🇦','Iran':'🇮🇷','Qatar':'🇶🇦','Jordan':'🇯🇴','Uzbekistan':'🇺🇿','Congo DR':'🇨🇩','New Zealand':'🇳🇿','Cabo Verde':'🇨🇻','Curaçao':'🇨🇼','Haiti':'🇭🇹'};
 const FLAGS_API={'Bosnia and Herzegovina':'🇧🇦','Cape Verde':'🇨🇻','Czech Republic':'🇨🇿','Democratic Republic of the Congo':'🇨🇩','South Korea':'🇰🇷','Turkey':'🇹🇷','United States':'🇺🇸',"Côte d'Ivoire":'🇨🇮'};
@@ -918,10 +933,10 @@ async function saveAdminNames(){
 
 async function runAssigner(){
   if(!confirm(tt('admin_run_assigner_confirm'))) return;
-  await callPoolUpdate({runAssigner:true}, tt('admin_saved'));
+  await callPoolUpdate({runAssigner:true}, tt('admin_saved'), true);
 }
 
-async function callPoolUpdate(body,successMsg){
+async function callPoolUpdate(body,successMsg,reveal){
   const btn1=document.getElementById('admin-save-btn');
   const btn2=document.getElementById('admin-assign-btn');
   btn1.disabled=true; btn2.disabled=true;
@@ -938,11 +953,69 @@ async function callPoolUpdate(body,successMsg){
     renderSquads();
     renderBoard();
     showAdminMsg(successMsg,true);
+    if(reveal) await runDraftReveal(pool.players);
   }catch(e){
     showAdminMsg(tt('admin_save_failed')+e.message,false);
   }finally{
     btn1.disabled=false; btn2.disabled=false;
   }
+}
+
+// ── Draft reveal ──────────────────────────────────────────
+async function runDraftReveal(players){
+  const overlay=document.createElement('div');
+  overlay.className='draft-overlay';
+  overlay.innerHTML=`
+    <div class="draft-box">
+      <div class="draft-eyebrow">${tt('draft_eyebrow')}</div>
+      <div class="draft-title">${tt('draft_title')}</div>
+      <div class="draft-player" id="draft-player"></div>
+      <div class="draft-teams" id="draft-teams"></div>
+      <div class="draft-progress" id="draft-progress"></div>
+      <button class="btn btn-ghost" id="draft-skip">${tt('draft_skip')}</button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  let skipped=false;
+  overlay.querySelector('#draft-skip').addEventListener('click',()=>{ skipped=true; });
+
+  const playerEl=overlay.querySelector('#draft-player');
+  const teamsEl=overlay.querySelector('#draft-teams');
+  const progEl=overlay.querySelector('#draft-progress');
+
+  for(let pi=0; pi<players.length; pi++){
+    const p=players[pi];
+    playerEl.innerHTML=`<span class="draft-dot" style="background:${p.color}"></span>${p.name}`;
+    teamsEl.innerHTML='';
+    progEl.textContent=`${pi+1} / ${players.length}`;
+
+    for(const country of (p.countries||[])){
+      const slot=document.createElement('div');
+      slot.className='draft-team-slot';
+      teamsEl.appendChild(slot);
+
+      if(!skipped){
+        const cycles=10;
+        for(let c=0;c<cycles && !skipped;c++){
+          const r=ALL_TEAMS[Math.floor(Math.random()*ALL_TEAMS.length)];
+          slot.innerHTML=`${flagFor(r)} ${r}`;
+          await sleep(40+c*10);
+        }
+      }
+      slot.innerHTML=`${flagFor(country)} ${country}`;
+      slot.classList.add('locked');
+      if(!skipped) await sleep(150);
+    }
+    if(!skipped) await sleep(400);
+  }
+
+  progEl.textContent='';
+  overlay.querySelector('#draft-skip').remove();
+  const doneBtn=document.createElement('button');
+  doneBtn.className='btn btn-gold';
+  doneBtn.textContent=tt('draft_done');
+  doneBtn.addEventListener('click',()=>{ overlay.remove(); go('teams'); });
+  overlay.querySelector('.draft-box').appendChild(doneBtn);
 }
 
 init();

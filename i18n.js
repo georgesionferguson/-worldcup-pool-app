@@ -71,6 +71,11 @@ export const STRINGS = {
     admin_admin_link: 'Admin link (keep this secret)',
     admin_copy: 'Copy',
     admin_copied: 'Copied!',
+
+    draft_eyebrow: 'Draft Day',
+    draft_title: 'Drawing teams…',
+    draft_skip: 'Skip animation',
+    draft_done: 'View squads →',
   },
 
   de: {
@@ -145,6 +150,11 @@ export const STRINGS = {
     admin_admin_link: 'Admin-Link (geheim halten)',
     admin_copy: 'Kopieren',
     admin_copied: 'Kopiert!',
+
+    draft_eyebrow: 'Draft-Tag',
+    draft_title: 'Teams werden gezogen…',
+    draft_skip: 'Animation überspringen',
+    draft_done: 'Teams ansehen →',
   },
 };
 

@@ -883,8 +883,9 @@ async function renderFixtures(){
   const all=gamesCache.map(g=>({...g, kickoff:fixtureLocalToDate(g)}));
   const isFinished=g=>String(g.finished).toUpperCase()==='TRUE';
   const live=all.filter(g=>!isFinished(g)&&g.kickoff<=now).sort((a,b)=>a.kickoff-b.kickoff);
-  const upcoming=all.filter(g=>!isFinished(g)&&g.kickoff>now).sort((a,b)=>a.kickoff-b.kickoff);
-  const finished=all.filter(isFinished).sort((a,b)=>b.kickoff-a.kickoff);
+  const upcoming=all.filter(g=>!isFinished(g)&&g.kickoff>now);
+  const finished=all.filter(isFinished);
+  const scheduled=[...upcoming,...finished].sort((a,b)=>a.kickoff-b.kickoff);
 
   if(dot) dot.className='sync-dot live';
   if(lbl) lbl.textContent=(live.length?live.length+' '+tt('live_now')+' · ':'')+upcoming.length+' '+(upcoming.length===1?tt('upcoming_match'):tt('upcoming_matches'));
@@ -926,20 +927,9 @@ async function renderFixtures(){
     }
     let rivalry='';
     if(homeOwner&&awayOwner){
-      if(homeOwner===awayOwner){
-        rivalry=`<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">— plays themselves!</span></div>`;
-      }else if(score==='final'){
-        const hs=parseInt(g.home_score)||0, as=parseInt(g.away_score)||0;
-        if(hs===as){
-          rivalry=`<div class="fx-rivalry"><span style="color:var(--gray-400);font-weight:400">Draw — </span><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">&</span> <span style="color:${awayColor}">${awayOwner}</span></div>`;
-        }else{
-          const winner=hs>as?homeOwner:awayOwner;
-          const winnerColor=hs>as?homeColor:awayColor;
-          rivalry=`<div class="fx-rivalry"><span style="color:${winnerColor}">${winner}</span> <span style="color:var(--gray-400);font-weight:400">won</span></div>`;
-        }
-      }else{
-        rivalry=`<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`;
-      }
+      rivalry=homeOwner!==awayOwner
+        ? `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">vs</span> <span style="color:${awayColor}">${awayOwner}</span></div>`
+        : `<div class="fx-rivalry"><span style="color:${homeColor}">${homeOwner}</span> <span style="color:var(--gray-400);font-weight:400">— plays themselves!</span></div>`;
     }
     return `<div class="fx-row" style="${style}">
       ${leftCol}
@@ -959,22 +949,16 @@ async function renderFixtures(){
   }
 
   let lastDay='';
-  upcoming.forEach(g=>{
+  scheduled.forEach(g=>{
     const day=g.kickoff.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
     if(day!==lastDay){
       if(lastDay) html+='</div>';
       html+=`<div class="fx-day">${day}</div><div class="fx-table">`;
       lastDay=day;
     }
-    html+=fxRow(g);
+    html+=fxRow(g, isFinished(g)?{score:'final'}:{});
   });
   if(lastDay) html+='</div>';
-
-  if(finished.length){
-    html+=`<div class="fx-day">${tt('results')}</div><div class="fx-table">`;
-    finished.forEach(g=>html+=fxRow(g,{score:'final'}));
-    html+='</div>';
-  }
 
   document.getElementById('fixtures-list').innerHTML=html;
 }

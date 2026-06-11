@@ -166,6 +166,8 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 
 /* ── Admin ── */
 .admin-banner{background:var(--gold);color:var(--navy);font-size:12px;font-weight:700;text-align:center;padding:6px;letter-spacing:.04em;text-transform:uppercase;}
+.recover-banner{background:var(--pitch);color:var(--white);font-size:13px;font-weight:600;text-align:center;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
+.recover-banner a{color:var(--white);text-decoration:underline;font-weight:700;}
 .admin-panel{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow);}
 .admin-player-row{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);}
 .admin-player-row:last-child{border-bottom:none;}
@@ -516,6 +518,15 @@ async function init(){
     banner.className='admin-banner';
     banner.textContent='ADMIN VIEW';
     document.body.insertBefore(banner, document.querySelector('.hdr'));
+  }else{
+    let storedAdmin=null;
+    try{ storedAdmin=localStorage.getItem('wmpool_admin_'+poolId); }catch(e){}
+    if(storedAdmin){
+      const banner=document.createElement('div');
+      banner.className='recover-banner';
+      banner.innerHTML=`<span>${tt('recover_banner_text')}</span> <a href="?id=${poolId}&admin=${storedAdmin}">${tt('recover_banner_btn')}</a>`;
+      document.body.insertBefore(banner, document.querySelector('.hdr'));
+    }
   }
 
   buildNav();

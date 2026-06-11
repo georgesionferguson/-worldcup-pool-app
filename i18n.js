@@ -76,6 +76,9 @@ export const STRINGS = {
     draft_title: 'Drawing teams…',
     draft_skip: 'Skip animation',
     draft_done: 'View squads →',
+
+    recover_banner_text: 'You created this pool on this device.',
+    recover_banner_btn: 'Open admin panel →',
   },
 
   de: {
@@ -155,6 +158,9 @@ export const STRINGS = {
     draft_title: 'Teams werden gezogen…',
     draft_skip: 'Animation überspringen',
     draft_done: 'Teams ansehen →',
+
+    recover_banner_text: 'Du hast diesen Pool auf diesem Gerät erstellt.',
+    recover_banner_btn: 'Admin-Bereich öffnen →',
   },
 };
 

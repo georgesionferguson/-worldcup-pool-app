@@ -172,6 +172,8 @@ form.addEventListener('submit', async (e) => {
     const publicUrl = `${base}/pool.html?id=${data.id}`;
     const adminUrl = `${base}/pool.html?id=${data.id}&admin=${data.admin_token}`;
 
+    try { localStorage.setItem('wmpool_admin_' + data.id, data.admin_token); } catch (e) {}
+
     document.getElementById('public-link').value = publicUrl;
     document.getElementById('admin-link').value = adminUrl;
     document.getElementById('open-admin').href = adminUrl;

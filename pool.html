@@ -581,9 +581,27 @@ async function init(){
   }
 
   go('rules');
-  setTimeout(()=>syncNow(),400);
-  setInterval(()=>syncNow(),3*60*1000);
+  setTimeout(async()=>{ await syncNow(); scheduleSync(); },400);
 }
+
+// ── Auto-refresh ──────────────────────────────────────────
+function hasLiveGames(){
+  const now=new Date();
+  return gamesCache.some(g=>{
+    if(String(g.finished).toUpperCase()==='TRUE') return false;
+    const ko=fixtureLocalToDate(g);
+    return ko<=now && (now-ko)<4*60*60*1000;
+  });
+}
+let syncTimer=null;
+function scheduleSync(){
+  if(syncTimer) clearTimeout(syncTimer);
+  const interval=hasLiveGames()?30*1000:3*60*1000;
+  syncTimer=setTimeout(async()=>{ await syncNow(); scheduleSync(); },interval);
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&(!lastSync||Date.now()-lastSync.getTime()>20*1000)) syncNow();
+});
 
 function buildNav(){
   const navInner=document.getElementById('nav-inner');

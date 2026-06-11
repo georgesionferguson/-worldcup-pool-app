@@ -71,14 +71,21 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .warn{font-size:12px;color:#b45309;margin-top:4px;}
 .success-icon{font-size:32px;margin-bottom:8px;}
 
-#create-screen.hidden,#result-screen.hidden{display:none;}
+#create-screen.hidden,#setup-screen.hidden,#result-screen.hidden{display:none;}
+
+.admin-player-row{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);}
+.admin-player-row:last-child{border-bottom:none;}
+.admin-player-row input[type=text]{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:16px;font-family:'Inter',sans-serif;outline:none;}
+.admin-player-row input[type=text]:focus{border-color:var(--pitch);}
+.admin-player-row input[type=color]{width:44px;height:44px;border:1px solid var(--gray-200);border-radius:8px;padding:2px;cursor:pointer;background:var(--white);flex-shrink:0;}
+.skip-link{display:block;text-align:center;font-size:13px;color:var(--gray-600);margin-top:1rem;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;width:100%;}
 </style>
 </head>
 <body>
 
 <header class="hdr">
   <div class="hdr-inner">
-    <div class="hdr-logo"><span>⚽</span> WM Pool 2026</div>
+    <div class="hdr-logo"><span>⚽</span> World Cup Pool 2026</div>
   </div>
 </header>
 
@@ -125,6 +132,14 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
     </ul>
   </div>
 
+  <div id="setup-screen" class="card hidden">
+    <div class="card-title">Set up your players</div>
+    <div style="font-size:14px;color:var(--gray-600);line-height:1.6;margin-bottom:1rem">Give each player a name and pick their color — this is what highlights their teams in the fixtures list. You can always change these later from the admin panel.</div>
+    <div id="setup-players"></div>
+    <button class="btn btn-gold btn-block" id="setup-continue-btn" style="margin-top:1rem">Continue →</button>
+    <button type="button" class="skip-link" id="setup-skip-btn">Skip for now</button>
+  </div>
+
   <div id="result-screen" class="card hidden">
     <div class="success-icon">🎉</div>
     <div class="card-title">Your pool is ready!</div>
@@ -150,9 +165,17 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 </div>
 
 <script>
+const DEFAULT_COLORS = [
+  '#1d4ed8', '#c8102e', '#059669', '#d97706', '#7c3aed',
+  '#0891b2', '#db2777', '#65a30d', '#ea580c', '#4338ca',
+  '#0d9488', '#b91c1c',
+];
+
 const form = document.getElementById('create-form');
 const errorEl = document.getElementById('create-error');
 const btn = document.getElementById('create-btn');
+
+let createdPool = null;
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -173,18 +196,13 @@ form.addEventListener('submit', async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
 
-    const base = window.location.origin;
-    const publicUrl = `${base}/pool.html?id=${data.id}`;
-    const adminUrl = `${base}/pool.html?id=${data.id}&admin=${data.admin_token}`;
-
     try { localStorage.setItem('wmpool_admin_' + data.id, data.admin_token); } catch (e) {}
 
-    document.getElementById('public-link').value = publicUrl;
-    document.getElementById('admin-link').value = adminUrl;
-    document.getElementById('open-admin').href = adminUrl;
+    createdPool = { id: data.id, admin_token: data.admin_token, numPlayers };
 
+    renderSetupPlayers(numPlayers);
     document.getElementById('create-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
+    document.getElementById('setup-screen').classList.remove('hidden');
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.classList.add('show');
@@ -193,6 +211,57 @@ form.addEventListener('submit', async (e) => {
     btn.textContent = 'Create pool';
   }
 });
+
+function renderSetupPlayers(numPlayers) {
+  const wrap = document.getElementById('setup-players');
+  wrap.innerHTML = Array.from({ length: numPlayers }, (_, i) => `
+    <div class="admin-player-row">
+      <input type="color" value="${DEFAULT_COLORS[i % DEFAULT_COLORS.length]}" data-idx="${i}" data-field="color"/>
+      <input type="text" maxlength="40" data-idx="${i}" data-field="name" placeholder="Player ${i + 1}"/>
+    </div>
+  `).join('');
+}
+
+function showResultScreen() {
+  const base = window.location.origin;
+  const publicUrl = `${base}/pool.html?id=${createdPool.id}`;
+  const adminUrl = `${base}/pool.html?id=${createdPool.id}&admin=${createdPool.admin_token}`;
+
+  document.getElementById('public-link').value = publicUrl;
+  document.getElementById('admin-link').value = adminUrl;
+  document.getElementById('open-admin').href = adminUrl;
+
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('result-screen').classList.remove('hidden');
+}
+
+document.getElementById('setup-continue-btn').addEventListener('click', async () => {
+  const setupBtn = document.getElementById('setup-continue-btn');
+  setupBtn.disabled = true;
+  setupBtn.textContent = 'Saving…';
+
+  const inputs = document.querySelectorAll('#setup-players [data-field]');
+  const players = Array.from({ length: createdPool.numPlayers }, () => ({}));
+  inputs.forEach(inp => {
+    const idx = Number(inp.dataset.idx);
+    if (inp.dataset.field === 'name') players[idx].name = inp.value.trim();
+    if (inp.dataset.field === 'color') players[idx].color = inp.value;
+  });
+
+  try {
+    await fetch('/api/pool-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: createdPool.id, admin_token: createdPool.admin_token, players }),
+    });
+  } catch (e) {}
+
+  setupBtn.disabled = false;
+  setupBtn.textContent = 'Continue →';
+  showResultScreen();
+});
+
+document.getElementById('setup-skip-btn').addEventListener('click', showResultScreen);
 
 document.querySelectorAll('[data-copy]').forEach(b => {
   b.addEventListener('click', () => {

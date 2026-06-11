@@ -97,7 +97,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .squad-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .15s;}
 .squad-card:hover{box-shadow:var(--shadow-md);}
 .squad-header{padding:14px 16px 12px;display:flex;align-items:center;gap:10px;}
-.squad-avatar{width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--navy);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;}
+.squad-avatar{width:36px;height:36px;border-radius:50%;color:var(--navy);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;}
 .squad-name{font-size:16px;font-weight:700;color:var(--white);letter-spacing:.01em;}
 .squad-sub{font-size:11px;color:rgba(255,255,255,.6);}
 .squad-countries{padding:10px 12px;}
@@ -662,7 +662,7 @@ function renderSquads(){
     const total=cs.reduce((s,c)=>s+countryPts(c),0);
     return `<div class="squad-card">
       <div class="squad-header" style="background:${p.color}">
-        <div class="squad-avatar">${initials(p.name)}</div>
+        <div class="squad-avatar" style="background:${p.color}">${initials(p.name)}</div>
         <div><div class="squad-name">${p.name}</div><div class="squad-sub">${cs.length?total+' '+tt('pts'):tt('draw_tbc')}</div></div>
       </div>
       <div class="squad-countries">

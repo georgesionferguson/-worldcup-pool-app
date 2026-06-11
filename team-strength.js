@@ -47,11 +47,15 @@ export function assignTeams(numPlayers) {
   }
 
   const assignments = Array.from({ length: numPlayers }, () => []);
+  const counts = Array(numPlayers).fill(0);
   bands.forEach(band => {
     const shuffled = shuffle([...band]);
-    const offset = Math.floor(Math.random() * numPlayers);
+    const order = shuffle(Array.from({ length: numPlayers }, (_, i) => i))
+      .sort((a, b) => counts[a] - counts[b]);
     shuffled.forEach((team, i) => {
-      assignments[(offset + i) % numPlayers].push(team);
+      const p = order[i % numPlayers];
+      assignments[p].push(team);
+      counts[p]++;
     });
   });
   return assignments;

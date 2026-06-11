@@ -544,7 +544,9 @@ const poolId=params.get('id');
 const adminToken=params.get('admin');
 const isAdmin=!!adminToken;
 
-const supabase=createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase=createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  global: { fetch: (url,opts={})=>fetch(url,{...opts, cache:'no-store'}) }
+});
 
 let pool=null, lang='en';
 let goals={}, bonuses={};

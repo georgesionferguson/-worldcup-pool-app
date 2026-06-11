@@ -614,7 +614,15 @@ async function init(){
     updateAssignerButtons();
   }
 
-  go('rules');
+  let initialTab='rules';
+  try{
+    const savedTab=localStorage.getItem('wmpool_tab_'+poolId);
+    const allowed=['rules','teams','board','fixtures','standings'];
+    if(pool.trade_mode) allowed.push('trades');
+    if(isAdmin) allowed.push('admin');
+    if(savedTab && allowed.includes(savedTab)) initialTab=savedTab;
+  }catch(e){}
+  go(initialTab);
   setTimeout(async()=>{ await syncNow(); scheduleSync(); },400);
 }
 
@@ -695,6 +703,8 @@ function go(id){
   if(id==='trades'){
     tradePollTimer=setInterval(syncPoolData, 2*1000);
   }
+
+  try{ localStorage.setItem('wmpool_tab_'+poolId, id); }catch(e){}
 }
 
 // ── Squads ────────────────────────────────────────────────

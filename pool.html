@@ -106,6 +106,11 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .country-flag{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
 .country-name-text{font-size:13px;font-weight:500;color:var(--gray-900);flex:1;}
 .country-pts{font-size:12px;font-weight:600;color:var(--pitch);}
+.country-line.out .country-name-text{text-decoration:line-through;color:var(--gray-400);}
+.country-line.out .country-flag{opacity:0.45;}
+.country-line.out .country-pts{color:var(--gray-400);}
+.out-badge{font-size:9px;font-weight:700;background:#c0392b;color:#fff;border-radius:3px;padding:1px 5px;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0;}
+.lb-country-tag.out{opacity:0.45;text-decoration:line-through;}
 
 /* ── LEADERBOARD ── */
 .lb-hero{background:var(--navy);border-radius:var(--r);padding:1.5rem 1.75rem;margin-bottom:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative;overflow:hidden;}
@@ -549,7 +554,7 @@ const supabase=createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 let pool=null, lang='en';
-let goals={}, bonuses={};
+let goals={}, bonuses={}, eliminated=new Set();
 let gamesCache=[], lastSync=null, syncing=false;
 
 function tt(key,vars){ return t(lang,key,vars); }
@@ -729,11 +734,12 @@ function renderSquads(){
       </div>
       <div class="squad-countries">
         ${cs.length
-          ? cs.map(c=>`<div class="country-line">
+          ? cs.map(c=>{const isOut=eliminated.has(c);return `<div class="country-line${isOut?' out':''}">
               <span class="country-flag">${flagFor(c)}</span>
               <span class="country-name-text">${c}</span>
+              ${isOut?`<span class="out-badge">${tt('knocked_out')}</span>`:''}
               <span class="country-pts">${countryPts(c)} ${tt('pts')}</span>
-            </div>`).join('')
+            </div>`;}).join('')
           : `<div style="padding:10px 4px;font-size:12px;color:var(--gray-400)">${tt('draw_tbc')}</div>`
         }
       </div>
@@ -761,7 +767,7 @@ function renderBoard(){
 
   document.getElementById('lb-table').innerHTML=ranked.map(({p,pts},i)=>{
     const countries=(p.countries||[]).filter(Boolean);
-    const tags=countries.map(c=>`<span class="lb-country-tag">${flagFor(c)} ${c}</span>`).join('');
+    const tags=countries.map(c=>`<span class="lb-country-tag${eliminated.has(c)?' out':''}">${flagFor(c)} ${c}</span>`).join('');
     return `<div class="lb-row${i===0?' first-place':''}">
       <div class="lb-rank-num${i===0?' gold':''}">${i===0?'★':i+1}</div>
       <div class="lb-main">
@@ -827,6 +833,8 @@ async function syncNow(){
 
 function applyGames(games){
   const goalMap={}, stageMap={};
+  const elimSet=new Set();
+  const grpFinished={}, grpRows={};
   games.forEach(g=>{
     let h=g.home_team_name_en||g.home_team_en||g.home_team_name||g.home_team||null;
     let a=g.away_team_name_en||g.away_team_en||g.away_team_name||g.away_team||null;
@@ -838,17 +846,50 @@ function applyGames(games){
     if(st){
       if(h&&(!stageMap[h]||STAGE_ORDER.indexOf(st)>STAGE_ORDER.indexOf(stageMap[h]))) stageMap[h]=st;
       if(a&&(!stageMap[a]||STAGE_ORDER.indexOf(st)>STAGE_ORDER.indexOf(stageMap[a]))) stageMap[a]=st;
+      if(String(g.finished).toUpperCase()==='TRUE'){
+        const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
+        if(hs>as_&&a) elimSet.add(a);
+        else if(as_>hs&&h) elimSet.add(h);
+      }
     }
     if(g.type==='final'&&String(g.finished).toUpperCase()==='TRUE'){
       const hs=parseInt(g.home_score)||0, as=parseInt(g.away_score)||0;
       if(hs>as&&h) stageMap[h]='Winner';
       else if(as>hs&&a) stageMap[a]='Winner';
     }
+    if(g.type==='group'&&g.group&&h&&a&&String(g.finished).toUpperCase()==='TRUE'){
+      const grp=g.group;
+      grpFinished[grp]=(grpFinished[grp]||0)+1;
+      if(!grpRows[grp]) grpRows[grp]={};
+      if(!grpRows[grp][h]) grpRows[grp][h]={pts:0,gf:0,ga:0};
+      if(!grpRows[grp][a]) grpRows[grp][a]={pts:0,gf:0,ga:0};
+      const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
+      grpRows[grp][h].gf+=hs; grpRows[grp][h].ga+=as_;
+      grpRows[grp][a].gf+=as_; grpRows[grp][a].ga+=hs;
+      if(hs>as_) grpRows[grp][h].pts+=3;
+      else if(as_>hs) grpRows[grp][a].pts+=3;
+      else { grpRows[grp][h].pts++; grpRows[grp][a].pts++; }
+    }
   });
-  goals={}; bonuses={};
+  const thirds=[];
+  for(const [grp,rows] of Object.entries(grpRows)){
+    if((grpFinished[grp]||0)<6) continue;
+    const sorted=Object.entries(rows).map(([n,s])=>({n,pts:s.pts,gd:s.gf-s.ga,gf:s.gf}))
+      .sort((a,b)=>(b.pts-a.pts)||(b.gd-a.gd)||(b.gf-a.gf));
+    if(sorted[3]) elimSet.add(sorted[3].n);
+    if(sorted[2]) thirds.push(sorted[2]);
+  }
+  if(thirds.length===12){
+    thirds.sort((a,b)=>(b.pts-a.pts)||(b.gd-a.gd)||(b.gf-a.gf));
+    for(let i=8;i<12;i++) elimSet.add(thirds[i].n);
+  }
+  const elimObj={};
+  elimSet.forEach(e=>{ elimObj[e]=true; });
+  goals={}; bonuses={}; eliminated=new Set();
   allCountries().forEach(c=>{
     const g=fuzzy(goalMap,c); if(g!=null) goals[c]=g;
     const st=fuzzy(stageMap,c); if(st) bonuses[c]=st;
+    if(fuzzy(elimObj,c)!=null) eliminated.add(c);
   });
 }
 

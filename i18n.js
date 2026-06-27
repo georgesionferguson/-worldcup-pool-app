@@ -67,6 +67,7 @@ export const STRINGS = {
 
     draw_tbc: 'Teams TBC',
     pts: 'pts',
+    knocked_out: 'Out',
     empty_leaderboard: 'Add teams to see the leaderboard.',
     empty_players: 'No players set up yet.',
     tbd: 'TBD',
@@ -190,6 +191,7 @@ export const STRINGS = {
 
     draw_tbc: 'Teams werden ausgelost',
     pts: 'Pkt.',
+    knocked_out: 'Aus',
     empty_leaderboard: 'Füge Teams hinzu, um die Rangliste zu sehen.',
     empty_players: 'Noch keine Spieler eingerichtet.',
     tbd: 'TBD',
@@ -313,6 +315,7 @@ export const STRINGS = {
 
     draw_tbc: 'Equipos por confirmar',
     pts: 'pts',
+    knocked_out: 'Eliminado',
     empty_leaderboard: 'Añade equipos para ver la clasificación.',
     empty_players: 'Aún no hay jugadores configurados.',
     tbd: 'Por confirmar',
@@ -436,6 +439,7 @@ export const STRINGS = {
 
     draw_tbc: 'Équipes à déterminer',
     pts: 'pts',
+    knocked_out: 'Éliminé',
     empty_leaderboard: 'Ajoute des équipes pour voir le classement.',
     empty_players: 'Aucun joueur configuré pour le moment.',
     tbd: 'À déterminer',
@@ -559,6 +563,7 @@ export const STRINGS = {
 
     draw_tbc: 'Squadre da definire',
     pts: 'pti',
+    knocked_out: 'Eliminato',
     empty_leaderboard: 'Aggiungi squadre per vedere la classifica.',
     empty_players: 'Nessun giocatore configurato ancora.',
     tbd: 'Da definire',
@@ -682,6 +687,7 @@ export const STRINGS = {
 
     draw_tbc: 'Seleções a definir',
     pts: 'pts',
+    knocked_out: 'Eliminado',
     empty_leaderboard: 'Adicione seleções para ver a classificação.',
     empty_players: 'Nenhum jogador configurado ainda.',
     tbd: 'A definir',
@@ -805,6 +811,7 @@ export const STRINGS = {
 
     draw_tbc: 'Teams nog onbekend',
     pts: 'pt',
+    knocked_out: 'Uit',
     empty_leaderboard: 'Voeg teams toe om de ranglijst te zien.',
     empty_players: 'Nog geen spelers ingesteld.',
     tbd: 'Onbekend',

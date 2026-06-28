@@ -147,6 +147,13 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .grp-table td.pts{font-weight:700;color:var(--navy);}
 
 /* ── Fixtures ── */
+.fx-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 2px;cursor:pointer;user-select:none;margin:.75rem 0 .25rem;}
+.fx-section-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-400);display:flex;align-items:center;gap:6px;transition:color .15s;}
+.fx-section-hdr:hover .fx-section-title{color:var(--navy);}
+.fx-section-chevron{display:inline-block;transition:transform .2s;}
+.fx-section-hdr.open .fx-section-chevron{transform:rotate(90deg);}
+.fx-section-count{font-size:11px;color:var(--gray-400);font-weight:500;}
+.fx-section-body.collapsed{display:none;}
 .fx-day{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-400);margin:1.25rem 0 .5rem;}
 .fx-day:first-child{margin-top:0;}
 .fx-table{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);}
@@ -984,6 +991,9 @@ async function renderFixtures(){
     </div>`;
   }
 
+  const groupSched=scheduled.filter(g=>g.type==='group');
+  const koSched=scheduled.filter(g=>g.type!=='group');
+
   let html='';
   if(live.length){
     html+=`<div class="fx-day">${tt('live_now')}</div><div class="fx-table">`;
@@ -991,19 +1001,43 @@ async function renderFixtures(){
     html+='</div>';
   }
 
-  let lastDay='';
-  scheduled.forEach(g=>{
+  if(groupSched.length){
+    let isOpen=false;
+    try{isOpen=localStorage.getItem('fx_group_open')==='true';}catch(e){}
+    const finCount=groupSched.filter(isFinished).length;
+    const upCount=groupSched.filter(g=>!isFinished(g)).length;
+    const countLabel=upCount?finCount+' results · '+upCount+' upcoming':finCount+' results';
+    html+=`<div class="fx-section-hdr${isOpen?' open':''}" onclick="toggleFxGroup(this)">
+      <span class="fx-section-title"><span class="fx-section-chevron">▶</span> Group Stage</span>
+      <span class="fx-section-count">${countLabel}</span>
+    </div><div class="fx-section-body${isOpen?'':' collapsed'}">`;
+    let gDay='';
+    groupSched.forEach(g=>{
+      const day=g.kickoff.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+      if(day!==gDay){if(gDay) html+='</div>';html+=`<div class="fx-day">${day}</div><div class="fx-table">`;gDay=day;}
+      html+=fxRow(g,isFinished(g)?{score:'final'}:{});
+    });
+    if(gDay) html+='</div>';
+    html+='</div>';
+  }
+
+  let kDay='';
+  koSched.forEach(g=>{
     const day=g.kickoff.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
-    if(day!==lastDay){
-      if(lastDay) html+='</div>';
-      html+=`<div class="fx-day">${day}</div><div class="fx-table">`;
-      lastDay=day;
-    }
-    html+=fxRow(g, isFinished(g)?{score:'final'}:{});
+    if(day!==kDay){if(kDay) html+='</div>';html+=`<div class="fx-day">${day}</div><div class="fx-table">`;kDay=day;}
+    html+=fxRow(g,isFinished(g)?{score:'final'}:{});
   });
-  if(lastDay) html+='</div>';
+  if(kDay) html+='</div>';
 
   document.getElementById('fixtures-list').innerHTML=html;
+}
+
+function toggleFxGroup(hdr){
+  const body=hdr.nextElementSibling;
+  const willOpen=body.classList.contains('collapsed');
+  body.classList.toggle('collapsed',!willOpen);
+  hdr.classList.toggle('open',willOpen);
+  try{localStorage.setItem('fx_group_open',String(willOpen));}catch(e){}
 }
 
 // ── Standings ─────────────────────────────────────────────

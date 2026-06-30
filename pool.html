@@ -162,6 +162,7 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--gray-900);
 .fx-time{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.03em;color:var(--navy);width:64px;flex-shrink:0;line-height:1.1;}
 .fx-time small{display:block;font-family:'Inter',sans-serif;font-size:10px;color:var(--gray-400);font-weight:600;letter-spacing:.04em;}
 .fx-score{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;color:var(--navy);width:64px;flex-shrink:0;line-height:1.1;}
+.fx-pens{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;color:var(--gray-400);letter-spacing:.02em;line-height:1.2;}
 .fx-teams{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--gray-900);}
 .fx-stage{font-size:11px;color:var(--gray-400);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
 .fx-rivalry{font-size:12px;font-weight:700;margin-top:3px;}
@@ -965,7 +966,10 @@ async function renderFixtures(){
       leftCol=`<div class="fx-score">${g.home_score}–${g.away_score}</div>`;
       badge='<span class="fx-live"><span class="live-dot"></span>LIVE</span>';
     }else if(score==='final'){
-      leftCol=`<div class="fx-score">${g.home_score}–${g.away_score}</div>`;
+      const hp=parseInt(g.home_penalty_score)||0, ap=parseInt(g.away_penalty_score)||0;
+      const penStr=(parseInt(g.home_score)===parseInt(g.away_score)&&(hp||ap))
+        ?`<div class="fx-pens">(${hp}–${ap} pens)</div>`:'';
+      leftCol=`<div class="fx-score">${g.home_score}–${g.away_score}${penStr}</div>`;
       badge='<span class="fx-ft">FT</span>';
     }else{
       const time=g.kickoff.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});

@@ -491,8 +491,8 @@ import { TEAM_STRENGTH } from './team-strength.js';
 
 // ── Constants ─────────────────────────────────────────────
 const GOAL_PTS=4;
-const BONUS={'Last 32':10,'Last 16':16,'Quarter-final':20,'Final':24,'Winner':26};
-const STAGE_ORDER=['Last 32','Last 16','Quarter-final','Final','Winner'];
+const BONUS={'Last 32':10,'Last 16':16,'Quarter-final':20,'Semi-final':22,'Final':24,'Winner':26};
+const STAGE_ORDER=['Last 32','Last 16','Quarter-final','Semi-final','Final','Winner'];
 const API='/api/games';
 const ALL_TEAMS=Object.keys(TEAM_STRENGTH);
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
@@ -533,7 +533,7 @@ function fixtureLocalToDate(g){
 function inferStage(tp){
   const s=tp.toLowerCase();
   if(s==='final'||s.includes('final')) return 'Final';
-  if(s==='sf'||s.includes('semi')) return 'Quarter-final';
+  if(s==='sf'||s.includes('semi')) return 'Semi-final';
   if(s==='qf'||s.includes('quarter')) return 'Quarter-final';
   if(s==='r16'||s.includes('16')) return 'Last 16';
   if(s==='r32'||s.includes('32')) return 'Last 32';
@@ -857,12 +857,19 @@ function applyGames(games){
         const hs=parseInt(g.home_score)||0, as_=parseInt(g.away_score)||0;
         if(hs>as_&&a) elimSet.add(a);
         else if(as_>hs&&h) elimSet.add(h);
+        else if(hs===as_){
+          const hp=parseInt(g.home_penalty_score)||0, ap=parseInt(g.away_penalty_score)||0;
+          if(hp>ap&&a) elimSet.add(a);
+          else if(ap>hp&&h) elimSet.add(h);
+        }
       }
     }
     if(g.type==='final'&&String(g.finished).toUpperCase()==='TRUE'){
       const hs=parseInt(g.home_score)||0, as=parseInt(g.away_score)||0;
-      if(hs>as&&h) stageMap[h]='Winner';
-      else if(as>hs&&a) stageMap[a]='Winner';
+      const hp=parseInt(g.home_penalty_score)||0, ap=parseInt(g.away_penalty_score)||0;
+      const homeWins=(hs>as)||(hs===as&&hp>ap);
+      if(homeWins&&h) stageMap[h]='Winner';
+      else if(!homeWins&&a) stageMap[a]='Winner';
     }
     if(g.type==='group'&&g.group&&h&&a&&String(g.finished).toUpperCase()==='TRUE'){
       const grp=g.group;
